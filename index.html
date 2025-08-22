@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Verdant Codex | Plant Encyclopedia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Base Styles & Custom Properties --- */
+        :root {
+            --bg-color: #f4f1eb;
+            --text-color: #3a4d39;
+            --accent-color: #739072;
+            --highlight-color: #ece3ce;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Hide body scrollbar to let the container handle it */
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10+ */
+            user-select: none; /* Standard syntax */
+        }
+
+        /* --- Custom Fonts --- */
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- Scroll Snap Container --- */
+        .scroll-container {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+        }
+
+        /* --- Scroll Snap Section --- */
+        .scroll-section {
+            scroll-snap-align: start;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        /* --- Loading Screen --- */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 1s ease-in-out, visibility 1s ease-in-out;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* --- Growing Plant Animation --- */
+        .plant-loader {
+            width: 100px;
+            height: 150px;
+            position: relative;
+        }
+
+        .stem {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 8px;
+            height: 100%;
+            background-color: var(--accent-color);
+            transform-origin: bottom;
+            transform: scaleY(0);
+            animation: grow-stem 1.5s ease-out forwards;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .leaf {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            background-color: var(--accent-color);
+            border-radius: 50% 0;
+            transform-origin: bottom left;
+            opacity: 0;
+        }
+
+        .leaf.l1 {
+            transform: translateX(-4px) rotate(45deg) scale(0);
+            animation: grow-leaf 1s ease-out 1s forwards;
+        }
+        .leaf.l2 {
+            transform: translateX(4px) rotate(-135deg) scale(0);
+            animation: grow-leaf 1s ease-out 1.2s forwards;
+        }
+        .leaf.l3 {
+            bottom: 60px;
+            transform: translateX(-4px) rotate(45deg) scale(0);
+            animation: grow-leaf 1s ease-out 1.4s forwards;
+        }
+        .leaf.l4 {
+            bottom: 60px;
+            transform: translateX(4px) rotate(-135deg) scale(0);
+            animation: grow-leaf 1s ease-out 1.6s forwards;
+        }
+
+        @keyframes grow-stem {
+            from { transform: scaleY(0); }
+            to { transform: scaleY(1); }
+        }
+
+        @keyframes grow-leaf {
+            from { transform:  scale(0); opacity: 0; }
+            to { transform:  scale(1); opacity: 1; }
+        }
+        
+        #loader .loading-text {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: var(--text-color);
+            opacity: 0;
+            animation: fade-in-text 1s ease-in 2s forwards;
+        }
+        
+        @keyframes fade-in-text {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+
+        /* --- Content Animation --- */
+        .animated-content {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .is-visible .animated-content {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .animated-image {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            transition-delay: 0.2s;
+        }
+        
+        .is-visible .animated-image {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* --- Category Filter Buttons --- */
+        .filter-btn {
+            background-color: var(--highlight-color);
+            color: var(--text-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .filter-btn:hover {
+            transform: translateY(-2px);
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .filter-btn.active {
+            background-color: var(--text-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="plant-loader">
+            <div class="stem"></div>
+            <div class="leaf l1"></div>
+            <div class="leaf l2"></div>
+            <div class="leaf l3"></div>
+            <div class="leaf l4"></div>
+        </div>
+        <p class="loading-text">Cultivating knowledge...</p>
+    </div>
+
+    <div class="scroll-container" id="scroll-container">
+
+        <section class="scroll-section" id="welcome-section">
+            <div class="text-center p-8">
+                <div class="is-visible">
+                    <h1 class="font-display text-5xl md:text-7xl animated-content" style="transition-delay: 0.1s;">The Verdant Codex</h1>
+                    <p class="mt-4 text-lg md:text-xl max-w-2xl mx-auto animated-content" style="transition-delay: 0.3s;">An interactive encyclopedia of the world's most fascinating flora. Scroll down to explore.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="scroll-section" id="category-section">
+            <div class="text-center p-8">
+                <h2 class="font-display text-4xl md:text-5xl animated-content">Categories</h2>
+                <p class="mt-2 mb-8 text-lg md:text-xl max-w-2xl mx-auto animated-content" style="transition-delay: 0.2s;">Select a category to begin exploring.</p>
+                <div id="category-buttons" class="flex flex-wrap justify-center gap-4 animated-content" style="transition-delay: 0.4s;">
+                    </div>
+            </div>
+        </section>
+
+        <div id="plant-list-container"></div>
+
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Plant Data with Categories and Image URLs ---
+            const plantData = [
+                { scientific: "Monstera Deliciosa", common: "Swiss Cheese Plant", desc: "Iconic for its natural leaf-holes, this tropical plant is a favorite for its unique, lush appearance.", category: "Aroids", imageUrl: "https://images.unsplash.com/photo-1614594975525-e45190c55d0b?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Ficus Lyrata", common: "Fiddle Leaf Fig", desc: "A dramatic statement piece with large, violin-shaped leaves that command attention in any room.", category: "Ficus", imageUrl: "https://images.unsplash.com/photo-1582304996739-a898633e8065?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Dracaena Trifasciata", common: "Snake Plant", desc: "Extremely hardy and known for its air-purifying qualities, with stiff, upright leaves.", category: "Succulents", imageUrl: "https://images.unsplash.com/photo-1593974492126-5a8e3a2a4175?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Pilea Peperomioides", common: "Chinese Money Plant", desc: "Features unique, coin-shaped leaves and is easy to propagate, making it the plant that keeps on giving.", category: "Peperomia", imageUrl: "https://images.unsplash.com/photo-1614031690324-13734799e14a?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Zamioculcas Zamiifolia", common: "ZZ Plant", desc: "A virtually indestructible plant with wide, dark green leaves, perfect for beginners.", category: "Aroids", imageUrl: "https://media.istockphoto.com/id/2158516111/photo/zz-plant-in-a-gray-pot.jpg?s=612x612&w=is&k=20&c=m0-WxBxBq40mRc02XsWVMQRdcXHaO-5ojhHwYbzcbx4=" },
+                { scientific: "Epipremnum Aureum", common: "Pothos", desc: "A forgiving and fast-growing vine with heart-shaped leaves, great for hanging baskets.", category: "Vining", imageUrl: "https://images.unsplash.com/photo-1618420447159-a2a4c11d3318?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Chlorophytum Comosum", common: "Spider Plant", desc: "Produces 'spiderettes,' or baby plants, that dangle from the mother plant like spiders on a web.", category: "Easy Care", imageUrl: "https://images.unsplash.com/photo-1635583096959-a47690113c4c?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Strelitzia Nicolai", common: "Bird of Paradise", desc: "A large, upright plant that can produce stunning flowers resembling a bird's head.", category: "Flowering", imageUrl: "https://images.unsplash.com/photo-1580393222835-4a75b9643198?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Spathiphyllum", common: "Peace Lily", desc: "Elegant plant with dark green leaves and beautiful white spathes, known for its air-cleaning abilities.", category: "Flowering", imageUrl: "https://images.unsplash.com/photo-1599432646313-2b4120a442e5?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Ficus Elastica", common: "Rubber Plant", desc: "Features large, glossy leaves and comes in various colors, from deep burgundy to variegated green.", category: "Ficus", imageUrl: "https://images.unsplash.com/photo-1610632380312-5a41a41a2f64?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Calathea Orbifolia", common: "Orbifolia", desc: "Known for its large, round leaves with beautiful silver-green stripes, a true showstopper.", category: "Calathea", imageUrl: "https://media.istockphoto.com/id/1249800471/photo/calathea-orbifolia-plant.jpg?s=612x612&w=0&k=20&c=YPrBnD2LHoCJtebq73WGYILOe2fgKN6ES9RiNt7m25w=" },
+                { scientific: "Senecio Rowleyanus", common: "String of Pearls", desc: "A unique succulent with cascading stems of pea-shaped 'pearls'.", category: "Vining", imageUrl: "https://images.unsplash.com/photo-1614183604129-6a376cb2b712?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Aloe Vera", common: "Aloe Vera", desc: "Famous for the soothing gel inside its leaves, this succulent is both beautiful and useful.", category: "Succulents", imageUrl: "https://images.unsplash.com/photo-1520339999954-6f358d1212a6?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Crassula Ovata", common: "Jade Plant", desc: "A popular succulent with fleshy, oval-shaped leaves, considered a symbol of good luck.", category: "Succulents", imageUrl: "https://images.unsplash.com/photo-1612363199233-15594a65f16c?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Nephrolepis Exaltata", common: "Boston Fern", desc: "A classic fern with feathery, arching fronds that adds a touch of lushness.", category: "Ferns", imageUrl: "https://images.unsplash.com/photo-1605552528249-f0bac5b5c93a?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Anthurium", common: "Flamingo Flower", desc: "Boasts glossy, heart-shaped 'flowers' that are actually colorful spathes, lasting for months.", category: "Flowering", imageUrl: "https://images.unsplash.com/photo-1542990253-a7814532a798?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Codiaeum Variegatum", common: "Croton", desc: "A vibrant plant with stiff leaves in shades of yellow, orange, red, and green.", category: "Foliage", imageUrl: "https://images.unsplash.com/photo-1596547609339-3c834e38e394?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Philodendron Hederaceum", common: "Heartleaf Philodendron", desc: "A popular and easy-to-care-for vining plant with lovely heart-shaped leaves.", category: "Vining", imageUrl: "https://images.unsplash.com/photo-1600411832986-5a4477b64a1c?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Tillandsia", common: "Air Plant", desc: "A fascinating plant that doesn't need soil to grow, absorbing water and nutrients through its leaves.", category: "Epiphytes", imageUrl: "https://images.unsplash.com/photo-1587322639883-5a2e37f81109?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Aglaonema", common: "Chinese Evergreen", desc: "A durable plant with beautifully patterned leaves, tolerating low light conditions with ease.", category: "Foliage", imageUrl: "https://images.unsplash.com/photo-1629828232943-792a2931ae6a?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Maranta Leuconeura", common: "Prayer Plant", desc: "Its leaves fold up at night as if in prayer, showcasing intricate, beautiful patterns.", category: "Calathea", imageUrl: "https://images.unsplash.com/photo-1617935424523-e572b21f4520?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Hoya Carnosa", common: "Wax Plant", desc: "A vining plant with waxy leaves and clusters of star-shaped, fragrant flowers.", category: "Vining", imageUrl: "https://images.unsplash.com/photo-1596796362358-a420377a1791?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Aspidistra Elatior", common: "Cast Iron Plant", desc: "Named for its near indestructibility, it can survive in deep shade and with little water.", category: "Easy Care", imageUrl: "https://images.unsplash.com/photo-1628148829379-7a5b0959b35b?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Beaucarnea Recurvata", common: "Ponytail Palm", desc: "A fun and quirky plant with a swollen trunk base and a cascade of long, curly leaves.", category: "Palms", imageUrl: "https://images.unsplash.com/photo-1632050613131-057a88439a82?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Saintpaulia", common: "African Violet", desc: "A small, charming plant that produces velvety leaves and clusters of colorful flowers year-round.", category: "Flowering", imageUrl: "https://images.unsplash.com/photo-1601139467597-72355490f25a?q=80&w=1964&auto=format&fit=crop" },
+                { scientific: "Phalaenopsis", common: "Orchid", desc: "An elegant and popular choice, known for its long-lasting, beautiful blooms in a variety of colors.", category: "Epiphytes", imageUrl: "https://images.unsplash.com/photo-1519634992240-e184dc53a017?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Dieffenbachia", common: "Dumb Cane", desc: "A lush, tropical plant with large, patterned leaves. Handle with care as its sap is an irritant.", category: "Aroids", imageUrl: "https://media.istockphoto.com/id/1791282754/photo/close-up-view-of-dumb-cane-plant-background.jpg?s=612x612&w=is&k=20&c=vJsfLX3m6mbFHYTGR18Jf2agkTJBsPWrvR9gcEOK4ko=" },
+                { scientific: "Schefflera Arboricola", common: "Umbrella Plant", desc: "Features long, glossy, oval leaves that droop gracefully from a central stalk, like an umbrella.", category: "Foliage", imageUrl: "https://images.unsplash.com/photo-1614555803451-c580a3249080?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Peperomia Obtusifolia", common: "Baby Rubber Plant", desc: "A compact plant with thick, succulent-like leaves, perfect for small spaces.", category: "Peperomia", imageUrl: "https://images.unsplash.com/photo-1616501174626-a077a2d473b8?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Ceropegia Woodii", common: "String of Hearts", desc: "A delicate, trailing vine with heart-shaped, patterned leaves on thin, wiry stems.", category: "Vining", imageUrl: "https://images.unsplash.com/photo-1587848283823-863255a6d3f7?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Alocasia Polly", common: "Elephant Ear", desc: "A striking plant with large, arrow-shaped, dark green leaves and prominent silver veins.", category: "Aroids", imageUrl: "https://media.istockphoto.com/id/1044076504/photo/fresh-elephant-ear-leaf.jpg?s=612x612&w=is&k=20&c=vrUGPtOjsYoQUP11orCvvvlxdl1mtUBQrERQGZyiGrQ=" },
+                { scientific: "Asplenium Nidus", common: "Bird's Nest Fern", desc: "Forms a rosette of large, simple fronds that resemble a bird's nest.", category: "Ferns", imageUrl: "https://images.unsplash.com/photo-1620150325439-c52b0726c078?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Pachira Aquatica", common: "Money Tree", desc: "Often with a braided trunk, this plant is believed to bring good luck and financial success.", category: "Easy Care", imageUrl: "https://images.unsplash.com/photo-1600411833190-a528c59a3593?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Chamaedorea Elegans", common: "Parlor Palm", desc: "A classic, low-maintenance palm that has been popular since Victorian times for its elegant look.", category: "Palms", imageUrl: "https://images.unsplash.com/photo-1632207690189-2aca385750df?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Dypsis Lutescens", common: "Areca Palm", desc: "A popular and graceful palm with feathery, arching fronds that adds a tropical feel.", category: "Palms", imageUrl: "https://images.unsplash.com/photo-1614552485963-009c40b09f16?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Monstera Adansonii", common: "Swiss Cheese Vine", desc: "A smaller, vining relative of the Monstera Deliciosa, with the same iconic leaf holes.", category: "Aroids", imageUrl: "https://media.istockphoto.com/id/1913968815/photo/monstera-lechleriana-fresh-monstera-leaf-decorative-plants-monstera-monstera-adansonii-or.jpg?s=612x612&w=is&k=20&c=UkJ5AujJVLqxCroEWpys_36nGuIAUo1sKqaLdln6mDk=" },
+                { scientific: "Scindapsus Pictus", common: "Satin Pothos", desc: "Features velvety, dark green leaves splashed with silvery markings, a beautiful trailing plant.", category: "Vining", imageUrl: "https://images.unsplash.com/photo-1622328220339-a8cca8494770?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Calathea Makoyana", common: "Peacock Plant", desc: "Its thin, decorative leaves look like they've been painted with a fine brush.", category: "Calathea", imageUrl: "https://images.unsplash.com/photo-1639962507233-a3b0fb381736?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Stromanthe Triostar", common: "Triostar", desc: "A stunning plant with variegated leaves of pink, green, and cream, a true living piece of art.", category: "Foliage", imageUrl: "https://images.unsplash.com/photo-1628148829393-d9335835b377?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Fittonia", common: "Nerve Plant", desc: "Known for its striking leaves with brightly colored veins in pink, red, or white.", category: "Foliage", imageUrl: "https://images.unsplash.com/photo-1629828232930-398578841973?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Hypoestes Phyllostachya", common: "Polka Dot Plant", desc: "A whimsical plant with leaves speckled in shades of pink, white, or red.", category: "Foliage", imageUrl: "https://images.unsplash.com/photo-1631427962422-1e7a553b4437?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Begonia Maculata", common: "Polka Dot Begonia", desc: "Features dramatic, angel-wing shaped leaves with silver spots and a deep red underside.", category: "Foliage", imageUrl: "https://images.unsplash.com/photo-1617173949908-17513198ea23?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Hedera Helix", common: "English Ivy", desc: "A classic, vigorous vine that can be grown in hanging baskets or trained to climb.", category: "Vining", imageUrl: "https://images.unsplash.com/photo-1585881337144-3e3463e23541?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Tradescantia Zebrina", common: "Wandering Dude", desc: "A colorful, easy-to-grow trailing plant with striped leaves of purple and silver.", category: "Vining", imageUrl: "https://images.unsplash.com/photo-1669641004243-570045e3532f?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Senecio Radicans", common: "String of Bananas", desc: "A trailing succulent with crescent-shaped leaves that look like miniature bananas.", category: "Vining", imageUrl: "https://images.unsplash.com/photo-1620150325492-b68413558364?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Sedum Morganianum", common: "Burro's Tail", desc: "A stunning succulent with long, trailing stems covered in fleshy, teardrop-shaped leaves.", category: "Succulents", imageUrl: "https://images.unsplash.com/photo-1619569424297-96d0acb9a55e?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Echeveria", common: "Echeveria", desc: "A large genus of rosette-forming succulents, available in a vast array of colors and shapes.", category: "Succulents", imageUrl: "https://images.unsplash.com/photo-1542990253-a7814532a798?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Haworthia", common: "Zebra Cactus", desc: "A small succulent with striking white stripes or patterns on its green leaves.", category: "Succulents", imageUrl: "https://images.unsplash.com/photo-1608635340685-90a4a4a1b0a0?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Schlumbergera", common: "Christmas Cactus", desc: "A popular holiday plant that produces beautiful, tubular flowers at the tips of its stems.", category: "Succulents", imageUrl: "https://images.unsplash.com/photo-1607935268475-a96e6b17a3d9?q=80&w=1887&auto=format&fit=crop" },
+                { scientific: "Euphorbia Tirucalli", common: "Pencil Cactus", desc: "A unique succulent with a mass of pencil-thin, green stems that branch out.", category: "Succulents", imageUrl: "https://images.unsplash.com/photo-1622328220339-a8cca8494770?q=80&w=1887&auto=format&fit=crop" },
+            ];
+
+            const scrollContainer = document.getElementById('scroll-container');
+            const plantListContainer = document.getElementById('plant-list-container');
+            const categoryButtonsContainer = document.getElementById('category-buttons');
+            const loader = document.getElementById('loader');
+
+            let activeObserver;
+
+            // Hide the loader after the animation and enable scrolling
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }, 3000);
+
+            /**
+             * Populates the encyclopedia with a given set of plants.
+             */
+            function populateEncyclopedia(plants) {
+                if (!plantListContainer) return;
+
+                // Clear previous list and observer
+                plantListContainer.innerHTML = '';
+                if (activeObserver) {
+                    activeObserver.disconnect();
+                }
+
+                const fragment = document.createDocumentFragment();
+
+                plants.forEach((plant, index) => {
+                    const section = document.createElement('section');
+                    section.className = 'scroll-section plant-section';
+                    section.dataset.plant = plant.common;
+
+                    const imageOrderClass = (index % 2 === 0) ? '' : 'lg:order-2';
+                    const textOrderClass = (index % 2 === 0) ? '' : 'lg:order-1';
+                    
+                    const placeholderText = plant.common.replace(/ /g, '+');
+                    const imageColor = ['739072', '3a4d39', 'ece3ce', 'a0a0a0'][index % 4];
+                    const fallbackUrl = `https://placehold.co/500x500/${imageColor}/FFFFFF?text=${placeholderText}`;
+
+                    section.innerHTML = `
+                        <div class="container mx-auto px-6 py-12">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                                <div class="text-center lg:text-left ${textOrderClass}">
+                                    <h2 class="font-display text-4xl md:text-5xl animated-content">${plant.common}</h2>
+                                    <p class="italic text-lg text-gray-600 animated-content" style="transition-delay: 0.1s;">${plant.scientific}</p>
+                                    <p class="mt-4 text-lg max-w-md mx-auto lg:mx-0 animated-content" style="transition-delay: 0.2s;">
+                                        ${plant.desc}
+                                    </p>
+                                </div>
+                                <div class="flex justify-center ${imageOrderClass}">
+                                    <img src="${plant.imageUrl}" 
+                                        onerror="this.onerror=null;this.src='${fallbackUrl}';"
+                                        alt="${plant.common}" 
+                                        class="animated-image rounded-2xl shadow-2xl w-full max-w-xs sm:max-w-sm h-96 object-cover">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    fragment.appendChild(section);
+                });
+
+                plantListContainer.appendChild(fragment);
+                setupScrollAnimations();
+            }
+
+            /**
+             * Sets up the Intersection Observer for scroll animations.
+             */
+            function setupScrollAnimations() {
+                const sections = document.querySelectorAll('.scroll-section');
+                if (sections.length === 0) return;
+
+                const observerOptions = {
+                    root: scrollContainer,
+                    rootMargin: '0px',
+                    threshold: 0.5
+                };
+
+                activeObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-visible');
+                        } else {
+                            entry.target.classList.remove('is-visible');
+                        }
+                    });
+                }, observerOptions);
+
+                sections.forEach(section => {
+                    activeObserver.observe(section);
+                });
+            }
+            
+            /**
+             * Creates and manages category filter buttons and filtering logic.
+             */
+            function createCategoryButtons() {
+                // Get a unique, sorted list of categories
+                const categories = [...new Set(plantData.map(plant => plant.category))].sort();
+                
+                // Create the 'All' button
+                const allButton = document.createElement('button');
+                allButton.textContent = 'All';
+                allButton.className = 'filter-btn active';
+                allButton.dataset.category = 'All';
+                categoryButtonsContainer.appendChild(allButton);
+
+                // Create a button for each unique category
+                categories.forEach(category => {
+                    const button = document.createElement('button');
+                    button.textContent = category;
+                    button.className = 'filter-btn';
+                    button.dataset.category = category;
+                    categoryButtonsContainer.appendChild(button);
+                });
+
+                // Add event listener to the button container
+                categoryButtonsContainer.addEventListener('click', (event) => {
+                    const target = event.target;
+                    if (target.matches('.filter-btn')) {
+                        // Remove the 'active' class from all buttons
+                        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                        // Add the 'active' class to the clicked button
+                        target.classList.add('active');
+
+                        const selectedCategory = target.dataset.category;
+                        let filteredPlants;
+                        if (selectedCategory === 'All') {
+                            filteredPlants = plantData;
+                        } else {
+                            filteredPlants = plantData.filter(plant => plant.category === selectedCategory);
+                        }
+
+                        // Repopulate the list with filtered plants
+                        populateEncyclopedia(filteredPlants);
+                        
+                        // Smoothly scroll back to the category section
+                        scrollContainer.scrollTo({
+                            top: document.getElementById('category-section').offsetTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            }
+
+            // --- Initial setup calls ---
+            createCategoryButtons();
+            populateEncyclopedia(plantData);
+        });
+    </script>
+</body>
+</html>
